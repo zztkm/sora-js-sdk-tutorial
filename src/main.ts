@@ -1,24 +1,70 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import Sora from "sora-js-sdk";
+import type { ConnectionPublisher } from "sora-js-sdk";
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+const connectButton = document?.querySelector<HTMLButtonElement>("#connectButton")!; 
+const disconnectButton = document?.querySelector<HTMLButtonElement>("#disconnectButton")!;
+const localVideo = document?.querySelector<HTMLVideoElement>("#localVideo")!;
+const remoteVideos = document?.querySelector<HTMLVideoElement>("#remoteVideos")!;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+let sendrecv: ConnectionPublisher;
+
+connectButton?.addEventListener("click", async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  const debug = true;
+  const signalingUrl: string = import.meta.env.VITE_SORA_SIGNALING_URL;
+  const channelId: string = import.meta.env.VITE_SORA_CHANNEL_ID;
+  const metadata = {
+    access_token: import.meta.env.VITE_SORA_ACCESS_TOKEN,
+  }
+  const options = {
+    multistream: true,
+  }
+
+  const soraConnection = Sora.connection(signalingUrl, debug);
+  sendrecv = soraConnection.sendrecv(channelId, metadata, options);
+
+  sendrecv.on("track", (event) => {
+    const stream = event.streams[0];
+    const remoteVideoId = `remoteVideo-${stream.id}`;
+    if (!document.querySelector(`#${remoteVideoId}`)) {
+      const video = document.createElement("video");
+      video.id = remoteVideoId;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+      remoteVideos?.appendChild(video);
+    }
+  });
+
+  sendrecv.on("removetrack", (event) => {
+    const target = event.target as MediaStream;
+    const remoteVideo = document.querySelector(`#remoteVideo-${target.id}`);
+    if (remoteVideo) {
+      remoteVideo.remove();
+    }
+  });
+
+  await sendrecv.connect(stream);
+  localVideo.srcObject = stream;
+
+  connectButton.disabled = true;
+  disconnectButton.disabled = false;
+});
+
+disconnectButton?.addEventListener("click", async () => {
+  // sendrecv があるか確認
+  if (!sendrecv) {
+    return;
+  }
+
+  // 切断処理
+  await sendrecv.disconnect();
+  localVideo.srcObject = null;
+
+  while (remoteVideos?.firstChild) {
+    remoteVideos.removeChild(remoteVideos.firstChild);
+  }
+
+  connectButton.disabled = false;
+  disconnectButton.disabled = true;
+});
