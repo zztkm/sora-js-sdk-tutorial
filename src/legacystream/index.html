@@ -10,7 +10,18 @@
     <button id="connectButton">Connect</button>
     <button id="disconnectButton" disabled>Disconnect</button>
     <hr />
+    <div id="signalingUrlDisplay"></div>
+    <div id="channelIdDisplay"></div>
+    <hr />
+    <label for="signalingUrlInput">Signaling URL:</label>
+    <input type="text" id="signalingUrlInput" />
+    <p>チャネルIDは自動で決定されます</p>
+    <hr />
     <video id="localVideo" autoplay="" playsInline="" controls="" muted=""></video>
+    <hr />
+    <label for="watchChannelIdInput">視聴先のチャネルID:</label>
+    <input type="text" id="watchChannelIdInput" />
+    <button id="watchButton">視聴</button>
     <hr />
     <div id="remoteVideos"></div>
 
