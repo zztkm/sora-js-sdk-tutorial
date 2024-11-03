@@ -7,6 +7,9 @@ const disconnectButton =
 	document?.querySelector<HTMLButtonElement>("#disconnectButton");
 const localVideo = document?.querySelector<HTMLVideoElement>("#localVideo");
 const remoteVideos = document?.querySelector<HTMLVideoElement>("#remoteVideos");
+const signalingUrlInput =
+	document?.querySelector<HTMLInputElement>("#signalingUrl");
+const channelIdInput = document?.querySelector<HTMLInputElement>("#channelId");
 
 let sendrecv: ConnectionPublisher;
 
@@ -16,8 +19,8 @@ connectButton?.addEventListener("click", async () => {
 		audio: false,
 	});
 	const debug = true;
-	const signalingUrl: string = import.meta.env.VITE_SORA_SIGNALING_URL;
-	const channelId: string = import.meta.env.VITE_SORA_CHANNEL_ID;
+	const signalingUrl: string = signalingUrlInput?.value || "";
+	const channelId: string = channelIdInput?.value || "";
 	const metadata = {
 		access_token: import.meta.env.VITE_SORA_ACCESS_TOKEN,
 	};
