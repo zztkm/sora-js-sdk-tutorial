@@ -1,5 +1,18 @@
 import Sora from "sora-js-sdk";
 import type { ConnectionPublisher } from "sora-js-sdk";
+import { Logger } from "tslog";
+
+// ログポジションを正しくするためのワークアラウンド
+// https://github.com/fullstack-build/tslog/issues/302#issuecomment-2467630530
+class MyLogger<T> extends Logger<T> {
+    constructor(settings?: ISettingsParam<T>, logObj?: T) {
+        super(settings, logObj);
+        // @ts-ignore setting this private member as a workaround for https://github.com/fullstack-build/tslog/issues/302
+        this.stackDepthLevel = 6
+    }
+}
+
+const logger = new MyLogger({ name: "logger" });
 
 const connectButton =
 	document?.querySelector<HTMLButtonElement>("#connectButton");
@@ -14,6 +27,7 @@ const channelIdInput = document?.querySelector<HTMLInputElement>("#channelId");
 let sendrecv: ConnectionPublisher;
 
 connectButton?.addEventListener("click", async () => {
+	logger.info("connect button clicked");
 	const stream = await navigator.mediaDevices.getUserMedia({
 		video: true,
 		audio: false,
@@ -32,6 +46,7 @@ connectButton?.addEventListener("click", async () => {
 	sendrecv = soraConnection.sendrecv(channelId, metadata, options);
 
 	sendrecv.on("track", (event) => {
+		logger.info("on track");
 		const stream = event.streams[0];
 		const remoteVideoId = `remoteVideo-${stream.id}`;
 		if (!document.querySelector(`#${remoteVideoId}`)) {
@@ -45,6 +60,7 @@ connectButton?.addEventListener("click", async () => {
 	});
 
 	sendrecv.on("removetrack", (event) => {
+		logger.info("on removetrack");
 		const target = event.target as MediaStream;
 		const remoteVideo = document.querySelector(`#remoteVideo-${target.id}`);
 		if (remoteVideo) {
@@ -64,6 +80,7 @@ connectButton?.addEventListener("click", async () => {
 });
 
 disconnectButton?.addEventListener("click", async () => {
+	logger.info("disconnectButton clicked");
 	// sendrecv があるか確認
 	if (!sendrecv) {
 		return;
